@@ -133,7 +133,7 @@ class CardDeck(object):
                     card.set_attributes(name, suit, num)
                     self.deck.append(card)
 
-        for number in range(self.shuffle_count):
+        for deck_shuffle in range(self.shuffle_count):
             random.shuffle(self.deck)
         
     def draw(self):
