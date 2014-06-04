@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from cards import *
 from players import *
 from windows import *
