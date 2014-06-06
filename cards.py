@@ -5,7 +5,7 @@ __all__ = ['PlayingCard', 'CardDeck']
 
 import random
 from collections import deque
-
+from players import *
 
 class PlayingCard(object):
     """Contains the attributes of a single playing card and methods for
@@ -63,6 +63,11 @@ class PlayingCard(object):
         else:
             self.faceup = True
 
+    def face(self):
+        """Return True or False whether or not the card is face up."""
+
+        return self.faceup
+
     def set_attributes(self, name, suit, id_no=0):
         """Set the card's name, suit, and identification number."""
         
@@ -77,7 +82,7 @@ class PlayingCard(object):
 
 
 class CardDeck(object):
-    """Contains 52 or more playing cards and the methods for using them."""
+    """Contains 52 or more playing cards and the methods for using them."""     
 
     def __init__(self, decks=1):
         self.deck = deque()
@@ -140,3 +145,103 @@ class CardDeck(object):
         """Remove the first card from the deck and return it."""
 
         return self.deck.popleft()
+
+
+class Blackjack:
+    """Game logic for the card game Blackjack"""
+
+    def __init__(self, bet, decks=2, shuffle=25, debug=False):
+        self.deck_count = decks  # Number of card decks in the game deck
+        self.shuffle = shuffle   # Percent of deck left for shuffle threshold
+        self.player_bet = bet
+        self.verbose = debug
+
+        self.deck = CardDeck(decks=self.deck_count)
+        self._assign_values()
+        self.card_total = len(self.deck)
+        
+        self.player = BlackjackPlayer()
+        self.dealer = BlackjackDealer()
+
+    def _assign_values(self):
+        for card in self.deck:
+            if card.id > 9:
+                card.assign_value(10)
+            else:
+                card.assign_value(card.id)
+
+    def _shuffle_time(self):
+        """Check if it is time to shuffle the deck by calculating the
+        percentage of the cards remaining in the deck
+        """
+
+        remaining = len(self.deck)  # Current count of cards in the deck
+        percentage_left = int((remaining / self.card_total) * 100)
+
+        if ( percentage_left > 25 ):
+            return False  # It isn't time to shuffle
+        else:
+            return True   # Or maybe it is
+        
+    def deal(self):
+        """Deal out a new hand of cards to the dealer and player."""
+
+        if self.dealer:  # Has cards in hand
+            self.dealer.reset()
+
+        if self.player:  # Has cards in hand
+            self.player.reset()
+
+        dealer_first = self.deck.draw()
+        dealer_second = self.deck.draw()
+        dealer_second.flip()
+        self.dealer.take_card(dealer_first)
+        self.dealer.take_card(dealer_second)
+
+        player_first = self.deck.draw()
+        player_second = self.deck.draw()
+        player_first.flip()
+        player_second.flip()
+        self.player.take_card(player_first)
+        self.player.take_card(player_second)
+
+        if self.verbose:
+            print('Player bets:', self.player_bet)
+            for player in (self.player, self.dealer):
+                print(player, 'dealt:')
+                for card in player:
+                    if card.face():
+                        print(' '*3, str(card)+':', 'face up')
+                    else:
+                        print(' '*3, str(card)+':', 'face down')
+            
+    def check_hand(self, player):
+        """Check point value of the hand of cards and act appropriately."""
+
+        total = player.score()
+        if total > 21:
+            status = 'bust'
+        elif total == 21:
+            status = 'win'
+        else:
+            status = 'okay'
+
+        if self.verbose:
+            print(total, 'points')
+            
+        return status
+    
+    def hit(self, player):
+        """Retrieve a face up card from the deck, and add it to a hand."""
+
+        hit_card = self.deck.draw()
+        hit_card.flip()
+        player.take_card(hit_card)
+
+        if self.verbose:
+            print(player, 'receives', hit_card)
+
+    def stay(self):
+        """End the player's turn and pass control to the dealer."""
+
+        pass
